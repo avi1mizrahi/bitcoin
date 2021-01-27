@@ -796,7 +796,7 @@ public:
     void startRecordActivity();
     void registerActivity(const TxMempoolActivityEntry&);
     void stopRecordActivity();
-    void flushRecordActivity();
+    bool flushRecordActivity();
     bool isRecordingActivity() const;
 
     size_t DynamicMemoryUsage() const;
