@@ -2019,8 +2019,10 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
         banman->DumpBanlist();
     }, DUMP_BANS_INTERVAL);
 
-    node.scheduler->scheduleEvery([]{
-        node.mempool->flushRecordActivity();
+    const auto& mempool = node.mempool.get();
+    mempool->startRecordActivity();
+    node.scheduler->scheduleEvery([&]{
+        mempool->flushRecordActivity();
     })
 
 #if HAVE_SYSTEM
