@@ -834,7 +834,7 @@ void CTxMemPool::registerActivity(const TxMempoolActivityEntry& e)
 
 bool CTxMemPool::flushRecordActivity()
 {
-    if
+    if (!recordingActivity) return;
     try {
         FILE* filestr = fsbridge::fopen(GetDataDir() / "mempool_activity.dat", "ab");
         if (!filestr) {
