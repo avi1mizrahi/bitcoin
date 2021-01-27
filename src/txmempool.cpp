@@ -364,6 +364,7 @@ void CTxMemPool::addUnchecked(const CTxMemPoolEntry &entry, setEntries &setAnces
     // Used by AcceptToMemoryPool(), which DOES do
     // all the appropriate checks.
     indexed_transaction_set::iterator newit = mapTx.insert(entry).first;
+    registerActivity(TxMempoolActivityEntry(entry, GetSequence()+1, nullopt));
 
     // Update transaction for any feeDelta created by PrioritiseTransaction
     // TODO: refactor so that the fee delta is calculated before inserting
@@ -412,6 +413,7 @@ void CTxMemPool::removeUnchecked(txiter it, MemPoolRemovalReason reason)
     // We increment mempool sequence value no matter removal reason
     // even if not directly reported below.
     uint64_t mempool_sequence = GetAndIncrementSequence();
+    registerActivity(TxMempoolActivityEntry(*it, mempool_sequence, reason));
 
     if (reason != MemPoolRemovalReason::BLOCK) {
         // Notify clients that a transaction has been removed from the mempool
@@ -811,19 +813,67 @@ std::vector<TxMempoolInfo> CTxMemPool::infoAll() const
     return ret;
 }
 
-void CTxMemPool::recordActivity(std::unique_ptr<CAutoFile> file)
+void CTxMemPool::startRecordActivity()
 {
-    activityFile = std::move(file);
+    recordingActivity = true;
 }
 
-std::unique_ptr<CAutoFile> CTxMemPool::stopRecordActivity()
+void CTxMemPool::stopRecordActivity()
 {
-    return activityFile;
+    flushRecordActivity();
+    recordingActivity = false;
+}
+
+void CTxMemPool::registerActivity(const TxMempoolActivityEntry& e)
+{
+    if (!recordingActivity) return;
+
+    LOCK(recordActivityLock);
+    recordedActivities.push_back(e);
+}
+
+bool CTxMemPool::flushRecordActivity()
+{
+    try {
+        FILE* filestr = fsbridge::fopen(GetDataDir() / "mempool_activity.dat", "ab");
+        if (!filestr) {
+            return false;
+        }
+
+        CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);
+
+        LogPrintf("Writing mempool activities to disk.\n");
+        size_t size;
+        {
+            LOCK(recordActivityLock);
+            size = recordedActivities.size();
+
+            for (const auto& i : recordedActivities) {
+                file << i.txid;
+                file << int64_t{count_seconds(i.m_time)}; // TODO: check what this time means
+                file << int64_t{i.fee};
+                file << int64_t{i.nFeeDelta};
+                file << uint64_t{i.vsize};
+                file << uint8_t{i.reason.value_or(0xFF)};
+            }
+            recordedActivities.clear();
+        }
+
+        LogPrintf("Done writing %d mempool activities, closing file.\n", size);
+
+        if (!FileCommit(file.Get()))
+            throw std::runtime_error("FileCommit failed");
+
+    } catch (const std::exception& e) {
+        LogPrintf("Failed to flush mempool activities: %s. Continuing anyway.\n", e.what());
+        return false;
+    }
+    return true;
 }
 
 bool CTxMemPool::isRecordingActivity() const
 {
-    return activityFile;
+    return recordingActivity;
 }
 
 CTransactionRef CTxMemPool::get(const uint256& hash) const

@@ -110,8 +110,6 @@ private:
     CAmount nModFeesWithAncestors;
     int64_t nSigOpCostWithAncestors;
 
-    // Mempool recordActivity structures
-    std::unique_ptr<CAutoFile> activityFile;
 public:
     CTxMemPoolEntry(const CTransactionRef& _tx, const CAmount& _nFee,
                     int64_t _nTime, unsigned int _entryHeight,
@@ -400,6 +398,42 @@ enum class MemPoolRemovalReason {
     REPLACED,    //!< Removed for replacement
 };
 
+class TxMempoolActivityEntry
+{
+  public:
+    /** activity index, mainly for debugging */
+    uint64_t idx;
+
+    /** The transaction hash */
+    uint256 txid;
+
+    /** Time of activity */
+    std::chrono::seconds m_time;
+
+    /** Fee of the transaction. */
+    CAmount fee;
+
+    /** The fee delta. */
+    int64_t nFeeDelta;
+
+    /** Virtual size of the transaction. */
+    size_t vsize;
+
+    /** Reason of removal, otherwise it is an insertion */
+    Optional<MemPoolRemovalReason> reason;
+
+    TxMempoolActivity(const CTxMemPoolEntry& tx,
+                      uint64_t idx,
+                      Optional <MemPoolRemovalReason> reason = nullopt) :
+            idx(idx),
+            txid(tx.GetSharedTx()->GetHash()),
+            m_time(tx.GetTime()),
+            fee(tx.GetFee()),
+            nFeeDelta(tx.GetModifiedFee() - tx.GetFee()),
+            vsize(tx.GetTxSize()),
+            reason(reason) {}
+};
+
 class SaltedTxidHasher
 {
 private:
@@ -507,6 +541,10 @@ private:
     // This number is incremented once every time a transaction
     // is added or removed from the mempool for any reason.
     mutable uint64_t m_sequence_number{1};
+
+    mutable Mutex                       recordActivityLock;
+    std::vector<TxMempoolActivityEntry> recordedActivities GUARDED_BY(recordActivityLock);
+    std::atomic<bool>                   recordingActivity;
 
     void trackPackageRemoved(const CFeeRate& rate) EXCLUSIVE_LOCKS_REQUIRED(cs);
 
@@ -755,8 +793,10 @@ public:
     TxMempoolInfo info(const GenTxid& gtxid) const;
     std::vector<TxMempoolInfo> infoAll() const;
 
-    void recordActivity(std::unique_ptr<CAutoFile>);
-    std::unique_ptr<CAutoFile> stopRecordActivity();
+    void startRecordActivity();
+    void registerActivity(const TxMempoolActivityEntry&);
+    void stopRecordActivity();
+    void flushRecordActivity();
     bool isRecordingActivity() const;
 
     size_t DynamicMemoryUsage() const;
