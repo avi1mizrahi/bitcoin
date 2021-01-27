@@ -855,7 +855,10 @@ bool CTxMemPool::flushRecordActivity()
                 file << int64_t{i.fee};
                 file << int64_t{i.nFeeDelta};
                 file << uint64_t{i.vsize};
-                file << static_cast<uint8_t>(i.reason ? *i.reason : 0xFF);
+                const uint8_t reason = i.reason ?
+                                       static_cast<uint8_t>(*i.reason) :
+                                       static_cast<uint8_t>(0xFF);
+                file << reason;
             }
             recordedActivities.clear();
         }

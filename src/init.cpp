@@ -2023,7 +2023,7 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
     mempool->startRecordActivity();
     node.scheduler->scheduleEvery([&]{
         mempool->flushRecordActivity();
-    })
+    }, std::chrono::minutes{5});
 
 #if HAVE_SYSTEM
     StartupNotify(args);
