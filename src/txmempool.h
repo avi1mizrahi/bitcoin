@@ -110,6 +110,8 @@ private:
     CAmount nModFeesWithAncestors;
     int64_t nSigOpCostWithAncestors;
 
+    // Mempool recordActivity structures
+    std::unique_ptr<CAutoFile> activityFile;
 public:
     CTxMemPoolEntry(const CTransactionRef& _tx, const CAmount& _nFee,
                     int64_t _nTime, unsigned int _entryHeight,
@@ -752,6 +754,10 @@ public:
     TxMempoolInfo info(const uint256& hash) const;
     TxMempoolInfo info(const GenTxid& gtxid) const;
     std::vector<TxMempoolInfo> infoAll() const;
+
+    void recordActivity(std::unique_ptr<CAutoFile>);
+    std::unique_ptr<CAutoFile> stopRecordActivity();
+    bool isRecordingActivity() const;
 
     size_t DynamicMemoryUsage() const;
 

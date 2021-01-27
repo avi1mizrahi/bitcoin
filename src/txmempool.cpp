@@ -811,6 +811,21 @@ std::vector<TxMempoolInfo> CTxMemPool::infoAll() const
     return ret;
 }
 
+void CTxMemPool::recordActivity(std::unique_ptr<CAutoFile> file)
+{
+    activityFile = std::move(file);
+}
+
+std::unique_ptr<CAutoFile> CTxMemPool::stopRecordActivity()
+{
+    return activityFile;
+}
+
+bool CTxMemPool::isRecordingActivity() const
+{
+    return activityFile;
+}
+
 CTransactionRef CTxMemPool::get(const uint256& hash) const
 {
     LOCK(cs);
