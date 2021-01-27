@@ -422,9 +422,9 @@ class TxMempoolActivityEntry
     /** Reason of removal, otherwise it is an insertion */
     Optional<MemPoolRemovalReason> reason;
 
-    TxMempoolActivity(const CTxMemPoolEntry& tx,
-                      uint64_t idx,
-                      Optional <MemPoolRemovalReason> reason = nullopt) :
+    TxMempoolActivityEntry(const CTxMemPoolEntry& tx,
+                           uint64_t idx,
+                           Optional <MemPoolRemovalReason> reason = nullopt) :
             idx(idx),
             txid(tx.GetSharedTx()->GetHash()),
             m_time(tx.GetTime()),
