@@ -2019,6 +2019,12 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
         banman->DumpBanlist();
     }, DUMP_BANS_INTERVAL);
 
+    auto* mempool = node.mempool.get();
+    mempool->startRecordActivity();
+    node.scheduler->scheduleEvery([mempool]{
+        mempool->flushRecordActivity();
+    }, std::chrono::minutes{5});
+
 #if HAVE_SYSTEM
     StartupNotify(args);
 #endif
