@@ -4,7 +4,7 @@ entry = struct.Struct('<Q32s3qQB')
 
 
 def bytes2hex(bytes):
-	return hex(int.from_bytes(bytes, 'little'))
+	return f"{int.from_bytes(bytes, 'little'):064x}"
 
 
 reason = {
