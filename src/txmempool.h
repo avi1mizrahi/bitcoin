@@ -398,6 +398,35 @@ enum class MemPoolRemovalReason {
     REPLACED,    //!< Removed for replacement
 };
 
+class TxMempoolActivityEntry
+{
+  public:
+    /** activity index, mainly for debugging */
+    uint64_t idx;
+
+    /** The transaction hash */
+    uint256 txid;
+
+    /** Time of activity */
+    std::chrono::seconds m_time;
+
+    /** Fee of the transaction. */
+    CAmount fee;
+
+    /** The fee delta. */
+    int64_t nFeeDelta;
+
+    /** Virtual size of the transaction. */
+    size_t vsize;
+
+    /** Reason of removal, otherwise it is an insertion */
+    Optional<MemPoolRemovalReason> reason;
+
+    TxMempoolActivityEntry(const CTxMemPoolEntry& tx,
+                           uint64_t idx,
+                           Optional <MemPoolRemovalReason> reason = nullopt);
+};
+
 class SaltedTxidHasher
 {
 private:
@@ -505,6 +534,10 @@ private:
     // This number is incremented once every time a transaction
     // is added or removed from the mempool for any reason.
     mutable uint64_t m_sequence_number{1};
+
+    mutable Mutex                       recordActivityLock;
+    std::vector<TxMempoolActivityEntry> recordedActivities GUARDED_BY(recordActivityLock);
+    std::atomic<bool>                   recordingActivity;
 
     void trackPackageRemoved(const CFeeRate& rate) EXCLUSIVE_LOCKS_REQUIRED(cs);
 
@@ -752,6 +785,12 @@ public:
     TxMempoolInfo info(const uint256& hash) const;
     TxMempoolInfo info(const GenTxid& gtxid) const;
     std::vector<TxMempoolInfo> infoAll() const;
+
+    void startRecordActivity();
+    void registerActivity(const TxMempoolActivityEntry&);
+    void stopRecordActivity();
+    bool flushRecordActivity();
+    bool isRecordingActivity() const;
 
     size_t DynamicMemoryUsage() const;
 
