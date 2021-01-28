@@ -865,7 +865,7 @@ bool CTxMemPool::flushRecordActivity()
             for (const auto& i : recordedActivities) {
                 file << i.idx;
                 file << i.txid;
-                file << int64_t{count_seconds(i.m_time)}; // TODO: check what this time means
+                file << int64_t{count_seconds(i.m_time)};
                 file << int64_t{i.fee};
                 file << int64_t{i.nFeeDelta};
                 file << uint64_t{i.vsize};
