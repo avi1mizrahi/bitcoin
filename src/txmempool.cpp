@@ -364,7 +364,7 @@ void CTxMemPool::addUnchecked(const CTxMemPoolEntry &entry, setEntries &setAnces
     // Used by AcceptToMemoryPool(), which DOES do
     // all the appropriate checks.
     indexed_transaction_set::iterator newit = mapTx.insert(entry).first;
-    registerActivity(TxMempoolActivityEntry(entry, GetSequence()+1, nullopt));
+    registerActivity(TxMempoolActivityEntry(entry, GetSequence(), nullopt));
 
     // Update transaction for any feeDelta created by PrioritiseTransaction
     // TODO: refactor so that the fee delta is calculated before inserting
