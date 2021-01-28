@@ -818,7 +818,7 @@ TxMempoolActivityEntry::TxMempoolActivityEntry(const CTxMemPoolEntry& tx,
                                                Optional <MemPoolRemovalReason> reason) :
         idx(idx),
         txid(tx.GetSharedTx()->GetHash()),
-        m_time(reason ? GetTime() : tx.GetTime()),
+        m_time(reason ? GetTime<std::chrono::seconds>() : tx.GetTime()),
         fee(tx.GetFee()),
         nFeeDelta(tx.GetModifiedFee() - tx.GetFee()),
         vsize(tx.GetTxSize()),
