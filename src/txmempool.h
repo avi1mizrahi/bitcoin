@@ -424,14 +424,7 @@ class TxMempoolActivityEntry
 
     TxMempoolActivityEntry(const CTxMemPoolEntry& tx,
                            uint64_t idx,
-                           Optional <MemPoolRemovalReason> reason = nullopt) :
-            idx(idx),
-            txid(tx.GetSharedTx()->GetHash()),
-            m_time(reason ? GetTime() : tx.GetTime()),
-            fee(tx.GetFee()),
-            nFeeDelta(tx.GetModifiedFee() - tx.GetFee()),
-            vsize(tx.GetTxSize()),
-            reason(reason) {}
+                           Optional <MemPoolRemovalReason> reason = nullopt);
 };
 
 class SaltedTxidHasher

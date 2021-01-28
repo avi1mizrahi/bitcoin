@@ -813,6 +813,19 @@ std::vector<TxMempoolInfo> CTxMemPool::infoAll() const
     return ret;
 }
 
+TxMempoolActivityEntry::TxMempoolActivityEntry(const CTxMemPoolEntry& tx,
+                                               uint64_t idx,
+                                               Optional <MemPoolRemovalReason> reason) :
+        idx(idx),
+        txid(tx.GetSharedTx()->GetHash()),
+        m_time(reason ? GetTime() : tx.GetTime()),
+        fee(tx.GetFee()),
+        nFeeDelta(tx.GetModifiedFee() - tx.GetFee()),
+        vsize(tx.GetTxSize()),
+        reason(reason)
+{
+}
+
 void CTxMemPool::startRecordActivity()
 {
     recordingActivity = true;
