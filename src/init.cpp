@@ -1859,6 +1859,12 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
         fHaveGenesis = true;
     }
 
+    auto* mempool = node.mempool.get();
+    mempool->startRecordActivity();
+    node.scheduler->scheduleEvery([mempool]{
+        mempool->flushRecordActivity();
+    }, std::chrono::minutes{5});
+
 #if HAVE_SYSTEM
     const std::string block_notify = args.GetArg("-blocknotify", "");
     if (!block_notify.empty()) {
@@ -2018,12 +2024,6 @@ bool AppInitMain(const util::Ref& context, NodeContext& node, interfaces::BlockA
     node.scheduler->scheduleEvery([banman]{
         banman->DumpBanlist();
     }, DUMP_BANS_INTERVAL);
-
-    auto* mempool = node.mempool.get();
-    mempool->startRecordActivity();
-    node.scheduler->scheduleEvery([mempool]{
-        mempool->flushRecordActivity();
-    }, std::chrono::minutes{5});
 
 #if HAVE_SYSTEM
     StartupNotify(args);
